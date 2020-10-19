@@ -20,10 +20,10 @@ clean:
 	- $(RM) core.*
 
 test: mem
-	mem -test -f0 all all
+	./mem -test -f0 all worst
 
 stage1-test: mem
-	mem -test -f0 all first
+	./mem -test -f0 all worst
 
 pretty: 
 	indent *.c *.h -kr
