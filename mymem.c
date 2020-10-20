@@ -15,7 +15,7 @@ typedef struct ram
     struct ram *next;
     int size;            
     char alloc;          
-    void *ptr;           
+    char *ptr;           
 } ram;
 
 //  GLOBALS
@@ -31,8 +31,9 @@ void initmem(strategies strategy, size_t sz)
 	myStrategy  = strategy;
 	mySize      = sz;
 	if (myMemory != NULL) free(myMemory); 
-    ram *base = malloc(sizeof(ram));
+	myMemory = malloc(sz);
 
+    ram *base = malloc(sizeof(ram));
     base->size  = sz;
     base->prev  = NULL;
     base->next  = NULL;
@@ -40,52 +41,61 @@ void initmem(strategies strategy, size_t sz)
     base->ptr   = 0;
     head = base;
     largestFree = base;
-
-	myMemory = malloc(sz);
 }
 
 //  ALLOCATE MEMORYBLOCKS
 void *mymalloc(size_t requested)
 {
-
+    ram *new; 
     mem_largest_free();
-
-    ram *new = malloc(sizeof(ram));
-
-    //PTR
-    new->ptr = largestFree->ptr;
-    largestFree->ptr += requested;
-
-    //SIZE
-    largestFree->size -= requested;
-    new->size = requested;
-
-    new->alloc = 1;
-
-    // SET BLOCK TO HEAD IF FIRST
-    if(new->ptr == 0)
-        head = new;
-    else
-        largestFree->prev->next = new;
-
-    //NEXT/PREV
-    new->next = largestFree;
-    new->prev = largestFree->prev;
-    largestFree->prev = new;
-
-    return new;
+    if(largestFree->size >= requested)
+    {
+        if(largestFree->size == requested)
+            new = largestFree;
+        else
+        {
+            new = malloc(sizeof(ram));
+            //PTR
+            new->ptr = largestFree->ptr;
+            largestFree->ptr += requested;
+            //SIZE
+            largestFree->size -= requested;
+            new->size = requested;
+            // SET BLOCK TO HEAD IF FIRST
+            if(!new->ptr)
+                head = new;
+            else
+                largestFree->prev->next = new;
+            //NEXT/PREV
+            new->next = largestFree;
+            new->prev = largestFree->prev;
+            largestFree->prev = new;
+        }
+        new->alloc = 1;
+        return new->ptr;
+    }
 }
 
 //  FREE MEMORYBLOCKS
 void myfree(void* block)
 {
-    ram *tmp = block;
+    char* ptr = block;
+    ram *tmp = head;
+    while(tmp)
+    {
+        if(tmp->ptr == ptr)
+            break;
+        else if(tmp->next == NULL)
+            return;
+        tmp = tmp->next;
+    }
+
     tmp->alloc = 0;
 
     if(tmp->next)
         if(!tmp->next->alloc)
         {
-            myfree(tmp->next);
+            myfree(tmp->next->ptr);
         }
     if(tmp->prev)
          if(!tmp->prev->alloc)
@@ -231,7 +241,7 @@ void check_head(ram *tmp)
 
 void print_blk(ram *x)
 {
-    printf("PTR:\t0x%x\t HAS\t%i\t SIZE AND IS%s ALLOCATED\n",
+    printf("PTR:\t%i\t HAS\t%i\t SIZE AND IS%s ALLOCATED\n",
             x->ptr,
             x->size,
             x->alloc ? "" : " NOT");
