@@ -92,6 +92,7 @@ void do_randomized_test(int strategyToUse, int totalSize, float fillRatio, int m
 
 				myfree(pointer);
 			}
+            printf("hejsa\t%i\n",i);
 
 			sum_largest_free += mem_largest_free();
 			sum_hole_size += (mem_free() / mem_holes());

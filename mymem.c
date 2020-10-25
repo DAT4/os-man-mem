@@ -27,6 +27,7 @@ static ram *largestFree;
 //  INITIATE BASE MEMORY
 void initmem(strategies strategy, size_t sz)
 {
+    puts("initmem");
 	myStrategy  = strategy;
 	mySize      = sz;
 	if (myMemory != NULL) free(myMemory); 
@@ -45,6 +46,7 @@ void initmem(strategies strategy, size_t sz)
 //  ALLOCATE MEMORYBLOCKS
 void *mymalloc(size_t requested)
 {
+    puts("*mymalloc");
     ram *new; 
     mem_largest_free(); //Sætter den største ledige som global
     if (largestFree)
@@ -83,44 +85,40 @@ void *mymalloc(size_t requested)
 }
 
 //  FREE MEMORYBLOCKS
-void myfree(void* block)
+void myfree(void* ptr)
 {
-    char* ptr = block;
+    puts("myfree");
     ram *tmp = head;
-    int f = 0;
     while(tmp)
     {
-        if(tmp->alloc)
+        if(tmp->ptr == ptr)
         {
-        printf("PTR:\t%i\tAGAINST\t%i\n",ptr,tmp->ptr);
-            if(tmp->ptr == ptr)
-                break;
-            else if(tmp->next == NULL)
-                return;
+            tmp->alloc = 0;
+            if(tmp->next)
+                if(!tmp->next->alloc)
+                {
+                    puts("recursion");
+                    myfree(tmp->next->ptr);
+                }
+            if(tmp->prev)
+                if(!tmp->prev->alloc)
+                {
+                    tmp->prev->next = tmp->next;
+                    tmp->next->prev = tmp->prev;
+                    tmp->prev->size += tmp->size;
+                    free(tmp);
+                }
+            puts("done");
+            return;
         }
         tmp = tmp->next;
     }
-
-    tmp->alloc = 0;
-
-    if(tmp->next)
-        if(!tmp->next->alloc)
-        {
-            myfree(tmp->next->ptr);
-        }
-    if(tmp->prev)
-         if(!tmp->prev->alloc)
-         {
-             tmp->prev->next = tmp->next;
-             tmp->next->prev = tmp->prev;
-             tmp->prev->size += tmp->size;
-             free(tmp);
-         }
 }
 
 //  FIND HOW MANY FREE MEMORYBLOCKS IN BETWEEN
 int mem_holes()
 {
+    puts("mem_holes");
     int x = 0;
     ram *tmp = head;
     while(tmp)
@@ -135,6 +133,7 @@ int mem_holes()
 //  FIND HOW MUCH ALLOCATED MEMORY
 int mem_allocated()
 {
+    puts("mem_allocated");
     int x = 0;
     ram *tmp = head;
     while(tmp)
@@ -148,6 +147,7 @@ int mem_allocated()
 
 int mem_free()
 {
+    puts("mem_free");
     int x = 0;
     ram *tmp = head;
     while(tmp)
@@ -161,6 +161,7 @@ int mem_free()
 
 int mem_largest_free()
 {
+    puts("mem_largest_free");
     largestFree = NULL;
     ram *tmp = head;
     while(tmp)
@@ -182,6 +183,7 @@ int mem_largest_free()
 
 int mem_small_free(int size)
 {
+    puts("mem_small_free");
     int x = 0;
     ram *tmp = head;
     while(tmp)
@@ -195,6 +197,7 @@ int mem_small_free(int size)
 
 char mem_is_alloc(void *ptr)
 {
+    puts("mem_is_alloc");
     ram *tmp = head;
     while(tmp)
     {
@@ -211,22 +214,27 @@ char mem_is_alloc(void *ptr)
 }
 void *mem_pool()
 {
+    puts("mem_pool");
 	return 0;
 }
 int mem_total()
 {
+    puts("mem_total");
 	return mySize;
 }
 char *strategy_name(strategies strategy)
 {
+    puts("strategy_name");
     return "worst";
 }
 strategies strategyFromString(char * strategy)
 {
+    puts("strategyFromString");
 	return Worst;
 }
 void print_memory()
 {
+    puts("print_memory");
     check_head(head);
 	return;
 }
@@ -234,6 +242,7 @@ void print_memory()
 //  SUMMARIZE THE CURRENT STATUS OF THE MEMORY
 void print_memory_status()
 {
+    puts("print_memory_status");
 	printf("%d out of %d bytes allocated.\n",mem_allocated(),mem_total());
 	printf("%d bytes are free in %d holes; maximum allocatable block is %d bytes.\n",mem_free(),mem_holes(),mem_largest_free());
 	printf("Average hole size is %f.\n\n",((float)mem_free())/mem_holes());
@@ -241,11 +250,13 @@ void print_memory_status()
 
 void try_mymem(int argc, char **argv) 
 {
+    puts("try_mymem");
     return;
 }
 
 void check_head(ram *tmp)
 {
+    puts("check_head");
     printf("PTR:\t%i\t HAS\t%i\t SIZE AND IS%s ALLOCATED\n",
             tmp->ptr,
             tmp->size,
