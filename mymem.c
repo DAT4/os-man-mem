@@ -6,7 +6,6 @@
 #include "mymem.h"
 
 void check_head();
-void print_blk();
 
 //  MODELS
 typedef struct ram
@@ -38,7 +37,7 @@ void initmem(strategies strategy, size_t sz)
     base->prev  = NULL;
     base->next  = NULL;
     base->alloc = 0;
-    base->ptr   = myMemory;
+    base->ptr   = 0;
     head = base;
     largestFree = base;
 }
@@ -47,42 +46,40 @@ void initmem(strategies strategy, size_t sz)
 void *mymalloc(size_t requested)
 {
     ram *new; 
-    mem_largest_free();
-
-    if(largestFree->size > requested)
+    mem_largest_free(); //Sætter den største ledige som global
+    if (largestFree)
     {
-        new = malloc(sizeof(ram));
-        //PTR
-        new->ptr = largestFree->ptr;
-        largestFree->ptr += requested;
-        //SIZE
-        largestFree->size -= requested;
-        new->size = requested;
-        // SET BLOCK TO HEAD IF FIRST
-        if(new->ptr == myMemory)
-            head = new;
-        else
-            largestFree->prev->next = new;
-        //NEXT/PREV
-        new->next = largestFree;
-        new->prev = largestFree->prev;
-        largestFree->prev = new;
-    }
-    else if (largestFree->size == requested)
-    {
-        new = largestFree;
-    }
-    else
-    {
-        return NULL;
-    }
+        if(largestFree->size > requested)
+        {
+            new = malloc(sizeof(ram));
+            //PTR
+            new->ptr = largestFree->ptr;
+            largestFree->ptr += requested;
+            //SIZE
+            largestFree->size -= requested;
+            new->size = requested;
+            // SET BLOCK TO HEAD IF FIRST
+            if(!new->ptr)
+                head = new;
+            else
+                largestFree->prev->next = new;
+            //NEXT/PREV
+            new->next = largestFree;
+            new->prev = largestFree->prev;
+            largestFree->prev = new;
+        }
+        else if (largestFree->size == requested)
+        {
+            new = largestFree;
+        }
 
-    //ALLOCATE 
-    new->alloc = 1;
+        //ALLOCATE 
+        new->alloc = 1;
 
-
-    //RETURN POINTER
-    return new->ptr;
+        //RETURN POINTER
+        return new->ptr;
+    }
+    return NULL;
 }
 
 //  FREE MEMORYBLOCKS
@@ -90,12 +87,17 @@ void myfree(void* block)
 {
     char* ptr = block;
     ram *tmp = head;
-    while(tmp->next)
+    int f = 0;
+    while(tmp)
     {
-        if(tmp->ptr == ptr)
-            break;
-        else if(tmp->next == NULL)
-            return;
+        if(tmp->alloc)
+        {
+        printf("PTR:\t%i\tAGAINST\t%i\n",ptr,tmp->ptr);
+            if(tmp->ptr == ptr)
+                break;
+            else if(tmp->next == NULL)
+                return;
+        }
         tmp = tmp->next;
     }
 
@@ -121,7 +123,7 @@ int mem_holes()
 {
     int x = 0;
     ram *tmp = head;
-    while(tmp->next)
+    while(tmp)
     {
         if(!tmp->alloc)
             x++;
@@ -135,7 +137,7 @@ int mem_allocated()
 {
     int x = 0;
     ram *tmp = head;
-    while(tmp->next)
+    while(tmp)
     {
         if(tmp->alloc)
             x += tmp->size;
@@ -148,7 +150,7 @@ int mem_free()
 {
     int x = 0;
     ram *tmp = head;
-    while(tmp->next)
+    while(tmp)
     {
         if(!tmp->alloc)
             x += tmp->size;
@@ -159,23 +161,32 @@ int mem_free()
 
 int mem_largest_free()
 {
+    largestFree = NULL;
     ram *tmp = head;
-    while(tmp->next)
+    while(tmp)
     {
-        if(tmp->size > largestFree->size && !tmp->alloc)
-            largestFree = tmp;
+        if(!tmp->alloc)
+        {
+            if(!largestFree)
+                largestFree = tmp;
+            else if(tmp->size > largestFree->size)
+                largestFree = tmp;
+        }
         tmp = tmp->next;
     }
-	return largestFree->size;
+    if (largestFree)
+        return largestFree->size;
+    else 
+        return 0;
 }
 
 int mem_small_free(int size)
 {
     int x = 0;
     ram *tmp = head;
-    while(tmp->next)
+    while(tmp)
     {
-        if(tmp->size <= size)
+        if(tmp->size <= size && !tmp->alloc)
             x++;
         tmp = tmp->next;
     }
@@ -185,17 +196,22 @@ int mem_small_free(int size)
 char mem_is_alloc(void *ptr)
 {
     ram *tmp = head;
-    while(tmp->next)
+    while(tmp)
+    {
         if(tmp->ptr == ptr)
+        {
             if(tmp->alloc)
                 return 1;
             else
                 return 0;
-    return -1;
+        }
+        tmp = tmp->next;
+    }
+    return 0;
 }
 void *mem_pool()
 {
-	return myMemory;
+	return 0;
 }
 int mem_total()
 {
@@ -223,35 +239,18 @@ void print_memory_status()
 	printf("Average hole size is %f.\n\n",((float)mem_free())/mem_holes());
 }
 
-//  TEST THE SYSTEM 
 void try_mymem(int argc, char **argv) 
 {
-	ram *a, *b, *c, *d, *e;
-	initmem(Worst,500);
-
-	a = mymalloc(100);
-	b = mymalloc(100);
-	c = mymalloc(100);
-	myfree(b);
-	d = mymalloc(50);
-	myfree(a);
-	e = mymalloc(25);
-
-	print_memory();
-	print_memory_status();
+    return;
 }
 
 void check_head(ram *tmp)
 {
-    print_blk(tmp);
+    printf("PTR:\t%i\t HAS\t%i\t SIZE AND IS%s ALLOCATED\n",
+            tmp->ptr,
+            tmp->size,
+            tmp->alloc ? "" : " NOT");
+
     if(tmp->next)
         check_head(tmp->next);
-}
-
-void print_blk(ram *x)
-{
-    printf("PTR:\t%p\t HAS\t%i\t SIZE AND IS%s ALLOCATED\n",
-            x->ptr,
-            x->size,
-            x->alloc ? "" : " NOT");
 }

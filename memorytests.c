@@ -195,6 +195,7 @@ int test_alloc_1(int argc, char **argv) {
 
 		if (mem_largest_free() != correct_largest_free)
 		{
+            printf("SIZE: %i\n",mem_largest_free());
 			printf("Largest memory block free not reported as %d with %s\n", correct_largest_free, strategy_name(strategy));
 			return	1;
 		}
@@ -281,6 +282,9 @@ int test_alloc_2(int argc, char **argv) {
 
 		if (mem_small_free(9) != correct_small)
 		{
+            print_memory_status();
+            print_memory();
+
 			printf("Small holes counted as %d, should be %d with %s\n", mem_small_free(9), correct_small, strategy_name(strategy));
 			return	1;
 		}
@@ -343,11 +347,13 @@ int test_alloc_3(int argc, char **argv) {
 			return	1;
 		}
 
+
 		if (mem_allocated() != correct_alloc)
 		{
 			printf("Memory not reported as %d with %s\n", correct_alloc, strategy_name(strategy));
 			return	1;
 		}
+
 
 		if (mem_largest_free() != correct_largest_free)
 		{
