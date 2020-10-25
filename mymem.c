@@ -104,8 +104,9 @@ void myfree(void* ptr)
                 if(!tmp->prev->alloc)
                 {
                     tmp->prev->next = tmp->next;
-                    tmp->next->prev = tmp->prev;
                     tmp->prev->size += tmp->size;
+                    if(tmp->next)
+                        tmp->next->prev = tmp->prev;
                     free(tmp);
                 }
             puts("done");
@@ -169,16 +170,26 @@ int mem_largest_free()
         if(!tmp->alloc)
         {
             if(!largestFree)
+            {
                 largestFree = tmp;
+            }
             else if(tmp->size > largestFree->size)
+            {
                 largestFree = tmp;
+            }
         }
         tmp = tmp->next;
     }
     if (largestFree)
+    {
+        puts("DONE");
         return largestFree->size;
+    }
     else 
+    {
+        puts("NULL");
         return 0;
+    }
 }
 
 int mem_small_free(int size)
